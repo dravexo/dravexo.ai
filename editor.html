@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Photo Editor - Remove Background</title>
+<!-- AI Background Removal Library -->
+<script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.0.6/dist/imgly-background-removal.min.js"></script>
+<!-- Cropper.js -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family: Inter, Arial, sans-serif;
+}
+
+body{
+  background: #e6e6e6;
+  min-height:100vh;
+}
+
+.upload-wrapper{
+  display:flex;
+  justify-content:center;
+  margin-top:100px;
+}
+
+.upload-card{
+  background:#fff;
+  width:90%;
+  max-width:820px;
+  padding:40px;
+  border-radius:28px;
+  box-shadow:0 30px 80px rgba(0,0,0,0.12);
+  text-align:center;
+}
+
+#editorImage {
+  max-width: 100%;
+  max-height: 500px;
+  border-radius: 14px;
+  margin-bottom: 30px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.action-btn{
+  background: linear-gradient(135deg, #20bf55, #01baef);
+  border: none;
+  color: white;
+  padding:14px 36px;
+  font-size:16px;
+  font-weight:600;
+  border-radius:40px;
+  cursor:pointer;
+  margin: 10px;
+  transition: transform 0.2s;
+}
+
+.action-btn:hover { transform: scale(1.05); }
+
+.back-btn{
+  background: transparent;
+  border: 2px solid #01baef;
+  color: #01baef;
+}
+
+.download-wrapper{
+  display:flex;
+  justify-content:center;
+  margin-top:50px;
+}
+
+.bg-color-controls label {
+  font-weight: 500;
+  color: #555;
+  margin-right: 10px;
+  vertical-align: middle;
+}
+
+.spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #555;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 20px auto;
+  display: none;
+}
+
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* app handle */
+.app-handle {
+  position: absolute;
+  top: 10px;
+  left: 40px;
+  font-size: 28px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #20bf55, #01baef);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: fadeIn 2s ease-in-out;
+}
+</style>
+</head>
+<body>
+<div class="app-handle">DRAVEXO</div>
+
+<div class="upload-wrapper">
+  <div class="upload-card">
+    <img id="editorImage">
+    <div id="loadingSpinner" class="spinner"></div>
+    <div id="progressContainer" style="display:none; width: 100%; background-color: #e0e0e0; border-radius: 10px; margin: 10px 0; overflow: hidden;">
+      <div id="progressBar" style="width: 0%; height: 20px; background: #999; text-align: center; line-height: 20px; color: white; font-size: 12px; transition: width 0.2s;">0%</div>
+    </div>
+    <br>
+    <button id="cropBtn" class="action-btn">✂ Crop Image</button>
+    <button id="saveCropBtn" class="action-btn" style="display:none;">✅ Save Crop</button>
+    <button id="removeBgBtn" class="action-btn">✨ Remove Background</button>
+    <button id="upscaleBtn" class="action-btn">⚡ 4K Upscale</button>
+    <button id="nextBtn" class="action-btn" style="display:none;">Next →</button>
+    <button id="compareBtn" class="action-btn" style="display:none;">👁 Compare</button>
+    <button onclick="window.location.href='index.html'" class="action-btn back-btn">← Back</button>
+
+    <div class="bg-color-controls" id="bgColorControls" style="display:none; margin-top: 20px;">
+      <label for="bgColorPicker">Add Background Color:</label>
+      <input type="color" id="bgColorPicker" value="#ffffff" style="vertical-align: middle; height: 35px; width: 50px; border: 1px solid #ccc; padding: 2px;">
+    </div>
+    <p id="status" style="margin-top:15px; color:#666; font-weight:500;"></p>
+  </div>
+</div>
+
+<!-- Download Page Section -->
+<div class="download-wrapper" id="downloadPage" style="display:none;">
+  <div class="upload-card">
+    <h2 style="color:#333; margin-bottom:20px;">🎉 Your Image is Ready!</h2>
+    <img id="finalImage" style="max-width:100%; max-height:500px; border-radius:14px; margin-bottom:20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+    <br>
+    <button id="finalDownloadBtn" class="action-btn">⬇ Download HD Image</button>
+    <button onclick="window.location.href='index.html'" class="action-btn back-btn">🏠 Home</button>
+  </div>
+</div>
+
+<script>
+  const img = document.getElementById('editorImage');
+  const status = document.getElementById('status');
+  const nextBtn = document.getElementById('nextBtn');
+  const cropBtn = document.getElementById('cropBtn');
+  const saveCropBtn = document.getElementById('saveCropBtn');
+  const removeBgBtn = document.getElementById('removeBgBtn');
+  const upscaleBtn = document.getElementById('upscaleBtn');
+  const compareBtn = document.getElementById('compareBtn');
+  const spinner = document.getElementById('loadingSpinner');
+  const bgColorControls = document.getElementById('bgColorControls');
+  const bgColorPicker = document.getElementById('bgColorPicker');
+  const downloadPage = document.getElementById('downloadPage');
+  const uploadWrapper = document.querySelector('.upload-wrapper');
+  const finalImage = document.getElementById('finalImage');
+  const finalDownloadBtn = document.getElementById('finalDownloadBtn');
+  const progressContainer = document.getElementById('progressContainer');
+  const progressBar = document.getElementById('progressBar');
+  
+  // 1. Load Image from LocalStorage
+  const savedImage = localStorage.getItem("uploadedImage");
+  let originalImageSrc = savedImage; // Keep track of the opaque image (original or cropped)
+  if(savedImage){
+    img.src = savedImage;
+  } else {
+    status.textContent = "No image found. Please go back and upload one.";
+  }
+
+  // Variable to hold the no-background image in memory (better for large 4K files)
+  let currentNoBgImage = localStorage.getItem('imageWithoutBg');
+
+  // Compare Logic
+  let tempEditedSrc = '';
+
+  const showOriginal = (e) => {
+    e.preventDefault();
+    if (!img.src || img.src === savedImage) return;
+    tempEditedSrc = img.src;
+    img.src = savedImage;
+  };
+
+  const showEdited = (e) => {
+    e.preventDefault();
+    if (!tempEditedSrc) return;
+    img.src = tempEditedSrc;
+  };
+
+  compareBtn.addEventListener('mousedown', showOriginal);
+  compareBtn.addEventListener('touchstart', showOriginal);
+  compareBtn.addEventListener('mouseup', showEdited);
+  compareBtn.addEventListener('mouseleave', showEdited);
+  compareBtn.addEventListener('touchend', showEdited);
+
+  // Crop Logic
+  let cropper;
+  
+  cropBtn.addEventListener('click', function() {
+    if (cropper) return;
+    cropper = new Cropper(img, {
+      viewMode: 1,
+      autoCropArea: 1,
+    });
+    cropBtn.style.display = 'none';
+    removeBgBtn.style.display = 'none';
+    saveCropBtn.style.display = 'inline-block';
+    upscaleBtn.style.display = 'none';
+  });
+
+  saveCropBtn.addEventListener('click', function() {
+    if (!cropper) return;
+    const canvas = cropper.getCroppedCanvas();
+    img.src = canvas.toDataURL();
+    originalImageSrc = img.src; // Update the opaque source
+    cropper.destroy();
+    cropper = null;
+    
+    cropBtn.style.display = 'inline-block';
+    removeBgBtn.style.display = 'inline-block';
+    saveCropBtn.style.display = 'none';
+    upscaleBtn.style.display = 'inline-block';
+  });
+
+  // 2. Remove Background Logic
+  removeBgBtn.addEventListener('click', async function(){
+    if(!img.src) return;
+    
+    status.textContent = "Unleashing the AI magic... 🪄";
+    this.disabled = true; // Disable button while processing
+    this.style.opacity = "0.7";
+    spinner.style.display = "block";
+    cropBtn.style.display = "none";
+    upscaleBtn.style.display = "none";
+    
+    progressContainer.style.display = "block";
+    progressBar.style.width = "0%";
+    progressBar.textContent = "0%";
+
+    try {
+        // 1. Convert current image to Blob
+        const response = await fetch(img.src);
+        const blob = await response.blob();
+        
+        // 2. Prepare Data for Python
+        const formData = new FormData();
+        formData.append('image', blob);
+
+        // 3. Send to Python Server (using XMLHttpRequest for progress)
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', 'http://127.0.0.1:5000/remove-bg', true);
+        xhr.responseType = 'blob';
+
+        xhr.upload.onprogress = function(e) {
+            if (e.lengthComputable) {
+                const percentComplete = Math.round((e.loaded / e.total) * 100);
+                progressBar.style.width = percentComplete + '%';
+                progressBar.textContent = percentComplete + '%';
+                if (percentComplete === 100) {
+                    status.textContent = "dravexo ko thoda sa time do";
+                }
+            }
+        };
+
+        const resultBlob = await new Promise((resolve, reject) => {
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    resolve(xhr.response);
+                } else {
+                    reject(new Error('Server returned ' + xhr.status));
+                }
+            };
+            xhr.onerror = function() {
+                reject(new Error('Network error'));
+            };
+            xhr.send(formData);
+        });
+
+        // 4. Get Result
+        const resultUrl = URL.createObjectURL(resultBlob);
+        
+        img.src = resultUrl;
+
+        // Save for reuse
+        const reader = new FileReader();
+        reader.onloadend = function() {
+            currentNoBgImage = reader.result;
+            try { localStorage.setItem('imageWithoutBg', reader.result); } catch(e){}
+        }
+        reader.readAsDataURL(resultBlob);
+
+        status.textContent = "Background bhaag gaya… dravexo aa gaya";
+        status.style.color = "blue";
+        
+        // UI Updates
+        this.disabled = false;
+        this.style.opacity = "1";
+        spinner.style.display = "none";
+        nextBtn.style.display = "inline-block";
+        progressContainer.style.display = "none";
+        bgColorControls.style.display = "block";
+        compareBtn.style.display = "inline-block";
+
+    } catch (error) {
+        console.error(error);
+        status.textContent = "Error: Python server issue. (pip install rembg & run server.py)";
+        status.style.color = "red";
+        this.disabled = false;
+        spinner.style.display = "none";
+        progressContainer.style.display = "none";
+        cropBtn.style.display = "inline-block";
+        upscaleBtn.style.display = "inline-block";
+    }
+  });
+
+  // 4. Apply Background Color Logic (triggers on color change)
+  bgColorPicker.addEventListener('input', function() {
+    const imageWithoutBg = currentNoBgImage;
+    if (!imageWithoutBg) return;
+
+    const bgColor = this.value;
+    const tempImage = new Image();
+    
+    tempImage.onload = function() {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = tempImage.width;
+        canvas.height = tempImage.height;
+        
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.drawImage(tempImage, 0, 0);
+        
+        img.src = canvas.toDataURL('image/png');
+    };
+    
+    tempImage.src = imageWithoutBg;
+  });
+
+  // 5. 4K Upscale Logic
+  upscaleBtn.addEventListener('click', async function() {
+    if(!img.src) return;
+    
+    status.textContent = "Unleashing the 4K beast... 🐲";
+    upscaleBtn.disabled = true;
+    nextBtn.disabled = true;
+    spinner.style.display = "block";
+    
+    cropBtn.style.display = "none";
+    removeBgBtn.style.display = "none";
+    
+    try {
+        // 1. Convert current image to Blob
+        const response = await fetch(img.src);
+        const blob = await response.blob();
+        
+        // 2. Prepare Data for Python
+        const formData = new FormData();
+        formData.append('image', blob);
+
+        // 3. Send to Python Server
+        const serverResponse = await fetch('http://127.0.0.1:5000/upscale', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!serverResponse.ok) throw new Error('Failed to connect to Python server');
+
+        // 4. Get Result
+        const resultBlob = await serverResponse.blob();
+        const resultUrl = URL.createObjectURL(resultBlob);
+        
+        img.src = resultUrl;
+        status.textContent = "Image bole: ‘Bhai ab main 4K hoon’";
+        status.style.color = "blue";
+        compareBtn.style.display = "inline-block";
+
+    } catch (error) {
+        console.error(error);
+        status.textContent = "Error: Python server nahi chal raha. (Run: python server.py)";
+        status.style.color = "red";
+        cropBtn.style.display = "inline-block";
+        removeBgBtn.style.display = "inline-block";
+    } finally {
+        upscaleBtn.disabled = false;
+        nextBtn.disabled = false;
+        spinner.style.display = "none";
+    }
+  });
+
+  // 6. Next Button Logic (Go to Download Page)
+  nextBtn.addEventListener('click', function(){
+    uploadWrapper.style.display = 'none';
+    downloadPage.style.display = 'flex';
+    finalImage.src = img.src;
+  });
+
+  // 7. Final Download Logic
+  finalDownloadBtn.addEventListener('click', function(){
+    const link = document.createElement('a');
+    link.download = 'dravexso-edited.png';
+    link.href = finalImage.src;
+    link.click();
+  });
+</script>
+</body>
+</html>
