@@ -2,9 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Photo Editor - Remove Background</title>
-<!-- AI Background Removal Library -->
-<script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.0.6/dist/imgly-background-removal.min.js"></script>
+<title>Photo Editor</title>
 <!-- Cropper.js -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
@@ -131,8 +129,8 @@ body{
     <br>
     <button id="cropBtn" class="action-btn">✂ Crop Image</button>
     <button id="saveCropBtn" class="action-btn" style="display:none;">✅ Save Crop</button>
-    <button id="removeBgBtn" class="action-btn">✨ Remove Background</button>
     <button id="upscaleBtn" class="action-btn">⚡ 4K Upscale</button>
+    <button onclick="window.location.href='magic_eraser.html'" class="action-btn" style="background: #ff9800;">🪄 Magic Eraser</button>
     <button id="nextBtn" class="action-btn" style="display:none;">⬇ Download Image</button>
     <button id="compareBtn" class="action-btn" style="display:none;">👁 Compare</button>
     <button onclick="window.location.href='index.html'" class="action-btn back-btn">← Back</button>
@@ -173,7 +171,6 @@ body{
   const nextBtn = document.getElementById('nextBtn');
   const cropBtn = document.getElementById('cropBtn');
   const saveCropBtn = document.getElementById('saveCropBtn');
-  const removeBgBtn = document.getElementById('removeBgBtn');
   const upscaleBtn = document.getElementById('upscaleBtn');
   const compareBtn = document.getElementById('compareBtn');
   const spinner = document.getElementById('loadingSpinner');
@@ -192,7 +189,7 @@ body{
   if(savedImage){
     img.src = savedImage;
   } else {
-    status.textContent = "No image found. Please go back and upload one.";
+    window.location.href = 'index.html';
   }
 
   // Variable to hold the no-background image in memory (better for large 4K files)
@@ -230,7 +227,6 @@ body{
       autoCropArea: 1,
     });
     cropBtn.style.display = 'none';
-    removeBgBtn.style.display = 'none';
     saveCropBtn.style.display = 'inline-block';
     upscaleBtn.style.display = 'none';
   });
@@ -244,104 +240,8 @@ body{
     cropper = null;
     
     cropBtn.style.display = 'inline-block';
-    removeBgBtn.style.display = 'inline-block';
     saveCropBtn.style.display = 'none';
     upscaleBtn.style.display = 'inline-block';
-  });
-
-  // 2. Remove Background Logic
-  removeBgBtn.addEventListener('click', async function(){
-    if(!img.src) return;
-    
-    status.textContent = "Unleashing the AI magic... 🪄";
-    this.disabled = true; // Disable button while processing
-    this.style.opacity = "0.7";
-    spinner.style.display = "block";
-    cropBtn.style.display = "none";
-    upscaleBtn.style.display = "none";
-    
-    progressContainer.style.display = "block";
-    progressBar.style.width = "0%";
-    progressBar.textContent = "0%";
-
-    try {
-        // 1. Convert current image to Blob
-        const response = await fetch(img.src);
-        const blob = await response.blob();
-        
-        // 2. Prepare Data for Python
-        const formData = new FormData();
-        formData.append('image', blob);
-
-        // 3. Send to Python Server (using XMLHttpRequest for progress)
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', 'https://reilwey.app/remove-bg', true);
-        xhr.responseType = 'blob';
-
-        xhr.upload.onprogress = function(e) {
-            if (e.lengthComputable) {
-                const percentComplete = Math.round((e.loaded / e.total) * 100);
-                progressBar.style.width = percentComplete + '%';
-                progressBar.textContent = percentComplete + '%';
-                if (percentComplete === 100) {
-                    status.textContent = "dravexo ko thoda sa time do";
-                }
-            }
-        };
-
-        const resultBlob = await new Promise((resolve, reject) => {
-            xhr.onload = function() {
-                if (xhr.status === 200) {
-                    resolve(xhr.response);
-                } else {
-                    reject(new Error('Server returned ' + xhr.status));
-                }
-            };
-            xhr.onerror = function() {
-                reject(new Error('Network error'));
-            };
-            xhr.send(formData);
-        });
-
-        // 4. Get Result
-        const resultUrl = URL.createObjectURL(resultBlob);
-        
-        img.src = resultUrl;
-
-        // Save for reuse
-        const reader = new FileReader();
-        reader.onloadend = function() {
-            currentNoBgImage = reader.result;
-            try { localStorage.setItem('imageWithoutBg', reader.result); } catch(e){}
-        }
-        reader.readAsDataURL(resultBlob);
-
-        status.textContent = "Background bhaag gaya… dravexo aa gaya";
-        status.style.color = "blue";
-        
-        // UI Updates
-        this.disabled = false;
-        this.style.opacity = "1";
-        spinner.style.display = "none";
-        nextBtn.style.display = "inline-block";
-        progressContainer.style.display = "none";
-        bgColorControls.style.display = "block";
-        compareBtn.style.display = "inline-block";
-
-    } catch (error) {
-        console.error(error);
-        if (error.message === 'Network error' || error.name === 'TypeError') {
-             status.textContent = "⚠️ Connection Failed: Possible CORS error or Server is down. Check console.";
-        } else {
-             status.textContent = "🙏 Sorry for the inconvenience. Our service is currently available from 8:00 AM to 9:00 PM.";
-        }
-        status.style.color = "#008B8B";
-        this.disabled = false;
-        spinner.style.display = "none";
-        progressContainer.style.display = "none";
-        cropBtn.style.display = "inline-block";
-        upscaleBtn.style.display = "inline-block";
-    }
   });
 
   // 4. Apply Background Color Logic (triggers on color change)
@@ -380,27 +280,30 @@ body{
     spinner.style.display = "block";
     
     cropBtn.style.display = "none";
-    removeBgBtn.style.display = "none";
     
     try {
-        // 1. Convert current image to Blob
-        const response = await fetch(img.src);
-        const blob = await response.blob();
-        
-        // 2. Prepare Data for Python
-        const formData = new FormData();
-        formData.append('image', blob);
-
-        // 3. Send to Python Server
-        const serverResponse = await fetch('https://reilwey.app/upscale', {
-            method: 'POST',
-            body: formData
+        // Client-side 4K Upscale (Canvas Resize)
+        const resultBlob = await new Promise((resolve, reject) => {
+            const tempImg = new Image();
+            tempImg.crossOrigin = "Anonymous";
+            tempImg.src = img.src;
+            tempImg.onload = () => {
+                const canvas = document.createElement('canvas');
+                // 4x Upscale
+                canvas.width = tempImg.naturalWidth * 4;
+                canvas.height = tempImg.naturalHeight * 4;
+                const ctx = canvas.getContext('2d');
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+                ctx.drawImage(tempImg, 0, 0, canvas.width, canvas.height);
+                canvas.toBlob((blob) => {
+                    if (blob) resolve(blob);
+                    else reject(new Error("Canvas conversion failed"));
+                }, 'image/png');
+            };
+            tempImg.onerror = (e) => reject(new Error("Image load failed"));
         });
 
-        if (!serverResponse.ok) throw new Error('Failed to connect to Python server');
-
-        // 4. Get Result
-        const resultBlob = await serverResponse.blob();
         const resultUrl = URL.createObjectURL(resultBlob);
         
         img.src = resultUrl;
@@ -410,10 +313,9 @@ body{
 
     } catch (error) {
         console.error(error);
-        status.textContent = "Error: Python server nahi chal raha. (Run: python server.py)";
+        status.textContent = "Error during upscale: " + error.message;
         status.style.color = "red";
         cropBtn.style.display = "inline-block";
-        removeBgBtn.style.display = "inline-block";
     } finally {
         upscaleBtn.disabled = false;
         nextBtn.disabled = false;

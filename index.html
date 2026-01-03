@@ -254,7 +254,7 @@ body.loaded #main-content {
         data-ad-client="ca-pub-8372917146289765">
 </amp-auto-ads>
 <div id="loader">
-    <h1>LOADING...</h1>
+    <h1>Welcome DRAVEXO...</h1>
 </div>
 
 <div id="main-content">
@@ -273,15 +273,14 @@ body.loaded #main-content {
 <!-- Welcome / Hero Section -->
 <div class="hero-section">
     <p style="color: #666; font-size: 16px;">Remove backgrounds & upscale images to 4K instantly.</p>
-    <p style="color: #3a0ecb; font-size: 25px; margin-top: 25px; font-weight: 500;">🙏 Sorry for the inconvenience. Our service is currently available
-       from 8:00 AM to 9:00 PM, and we’ll be launching a 24/7 server very soon.</p>
+    
 </div>
 
 <div class="upload-wrapper">
 
   <div class="upload-card">
 
-    <div class="dashed-box" id="dropBox">
+    <div class="dashed-box" id="dropBox" onclick="document.getElementById('fileInput').click()">
 
       <!-- image preview -->
       <img id="previewImage">
@@ -339,6 +338,69 @@ body.loaded #main-content {
 
 </div> <!-- End of main-content -->
 
-<script src="scrip.js"></script>
+<script>
+  // Trigger Opening Animation
+  window.addEventListener('load', function() {
+      document.body.classList.add('loaded');
+  });
+
+  // Serverless Logic: Handle Image Upload locally
+  const fileInput = document.getElementById('fileInput');
+  const previewImage = document.getElementById('previewImage');
+  const dropBox = document.getElementById('dropBox');
+  const openEditorBtn = document.querySelector('.open-editor-btn');
+  const statusText = document.getElementById('statusText');
+
+  // Handle File Selection
+  fileInput.addEventListener('change', function(e) {
+      handleFile(e.target.files[0]);
+  });
+
+  // Drag and Drop Support
+  dropBox.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropBox.style.borderColor = '#20bf55';
+  });
+  dropBox.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      dropBox.style.borderColor = '#a0a0a0';
+  });
+  dropBox.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropBox.style.borderColor = '#a0a0a0';
+      handleFile(e.dataTransfer.files[0]);
+  });
+
+  function handleFile(file) {
+      if (!file || !file.type.startsWith('image/')) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+          previewImage.src = e.target.result;
+          previewImage.style.display = 'block';
+          document.querySelector('.drop-text').style.display = 'none';
+          
+          // Save to LocalStorage to pass to editor.html
+          try {
+              localStorage.setItem('uploadedImage', e.target.result);
+              statusText.textContent = "Image Ready! Click 'Open Editor'.";
+              statusText.style.color = "green";
+          } catch (err) {
+              statusText.textContent = "Image too large for browser storage.";
+              statusText.style.color = "red";
+          }
+      };
+      reader.readAsDataURL(file);
+  }
+
+  // Navigate to Editor
+  openEditorBtn.addEventListener('click', function() {
+      if (localStorage.getItem('uploadedImage')) {
+          window.location.href = 'editor.html';
+      } else {
+          alert("Please select an image first!");
+      }
+  });
+</script>
 </body>
 </html>
