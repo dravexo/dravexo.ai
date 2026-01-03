@@ -3,6 +3,8 @@ from flask_cors import CORS
 from PIL import Image
 import io
 from rembg import remove
+import uvicorn
+import socket
 
 app = Flask(__name__)
 CORS(app)  # Allow browser to communicate with this server
@@ -45,4 +47,12 @@ def remove_background():
 
 if __name__ == '__main__':
     print("Starting Python Upscale Server on port 5000...")
-    app.run(debug=True, port=5000)
+    print("\033[1;36mRemove backgrounds & upscale images to 4K instantly.\033[0m")
+    print("Sorry for the inconvenience. Our service is currently available from 8:00 AM to 9:00 PM, and we’ll be launching a 24/7 server very soon.")
+
+    # Show the IP address for mobile access
+    hostname = socket.gethostname()
+    local_ip = socket.gethostbyname(hostname)
+    print(f"To access on mobile, use this URL: http://{local_ip}:5000")
+
+    uvicorn.run(app, host="0.0.0.0", port=5000)
