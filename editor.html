@@ -186,15 +186,6 @@ body{
   const progressContainer = document.getElementById('progressContainer');
   const progressBar = document.getElementById('progressBar');
   
-  // ------------------------------------------------------
-  // AUTOMATIC BACKEND CONFIGURATION
-  // ------------------------------------------------------
-  const hostname = window.location.hostname;
-  if (hostname === "localhost" || hostname === "127.0.0.1" || hostname.startsWith("192.168.") || hostname.startsWith("10.") || window.location.protocol === 'file:') {
-      BACKEND_URL = `http://${hostname === '' ? 'localhost' : hostname}:5000`;
-      console.log("Running in Local Mode. Backend:", BACKEND_URL);
-  }
-
   // 1. Load Image from LocalStorage
   const savedImage = localStorage.getItem("uploadedImage");
   let originalImageSrc = savedImage; // Keep track of the opaque image (original or cropped)
@@ -284,7 +275,7 @@ body{
 
         // 3. Send to Python Server (using XMLHttpRequest for progress)
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', `${BACKEND_URL}/remove-bg`, true);
+        xhr.open('POST', '/remove-bg', true);
         xhr.responseType = 'blob';
 
         xhr.upload.onprogress = function(e) {
@@ -397,7 +388,7 @@ body{
         formData.append('image', blob);
 
         // 3. Send to Python Server
-        const serverResponse = await fetch(`${BACKEND_URL}/upscale`, {
+        const serverResponse = await fetch('/upscale', {
             method: 'POST',
             body: formData
         });

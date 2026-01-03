@@ -1,16 +1,6 @@
 /* ==========================================
    GLOBAL CONFIGURATION
    ========================================== */
-// AUTOMATIC CONFIGURATION:
-// Ye code check karega ki aap Local chala rahe hain ya Cloud par.
- 
-const hostname = window.location.hostname;
-// Agar IP address (192.168...) ya localhost hai, to Local Server use karein
-if (hostname === "localhost" || hostname === "127.0.0.1" || hostname.startsWith("192.168.") || hostname.startsWith("10.") || window.location.protocol === 'file:') {
-    BACKEND_URL = `http://${hostname === '' ? 'localhost' : hostname}:5000`;
-    console.log("Running in Local Mode. Backend:", BACKEND_URL);
-}
-
 /* ==========================================
    DOM ELEMENTS & SETUP
    ========================================== */
@@ -106,7 +96,7 @@ async function processImage(endpoint) {
   resultImage.style.display = "none";
   
   try {
-    const response = await fetch(`${BACKEND_URL}${endpoint}`, {
+    const response = await fetch(endpoint, {
       method: 'POST',
       body: formData
     });
@@ -126,9 +116,9 @@ async function processImage(endpoint) {
     
   } catch (error) {
     console.error(error);
-    statusText.innerText = "Error: Could not connect to server. Check BACKEND_URL.";
+    statusText.innerText = "Error: Could not connect to server.";
     statusText.style.color = "red";
-    alert("Mobile par chalne ke liye 'BACKEND_URL' sahi hona chahiye (Render/Railway link).");
+    alert("Server connection failed.");
   }
 }
 
