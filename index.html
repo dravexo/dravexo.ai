@@ -290,7 +290,15 @@ body.loaded #main-content {
 
     </div>
 
-    <button class="open-editor-btn">Open Editor →</button>
+    <!-- Action Buttons -->
+    <div style="margin-top: 30px; display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;">
+        <button class="open-editor-btn" style="margin-top: 0;">Open Editor →</button>
+        <button id="removeBgBtn" class="upload-btn" style="background: linear-gradient(135deg, #ff0844, #ffb199);">Remove BG ✂️</button>
+        <button id="upscaleBtn" class="upload-btn" style="background: linear-gradient(135deg, #667eea, #764ba2);">Upscale 4K ✨</button>
+    </div>
+
+    <p id="statusText" style="margin-top: 15px; font-weight: 600; color: #333;"></p>
+    <img id="resultImage" style="display:none; max-width:100%; margin-top:20px; border-radius:14px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
 
   </div>
 
@@ -302,71 +310,6 @@ body.loaded #main-content {
 
 </div> <!-- End of main-content -->
 
-<script>
-// Trigger Opening Animation
-window.addEventListener('load', () => {
-    document.body.classList.add('loaded');
-});
-
-const fileInput = document.getElementById("fileInput");
-const previewImage = document.getElementById("previewImage");
-const dropBox = document.getElementById("dropBox");
-
-/* file select */
-fileInput.addEventListener("change", function(){
-  showPreview(this.files[0]);
-});
-
-/* drag over */
-dropBox.addEventListener("dragover", function(e){
-  e.preventDefault();
-  dropBox.style.borderColor = "#333";
-});
-
-/* drag leave */
-dropBox.addEventListener("dragleave", function(){
-  dropBox.style.borderColor = "#a0a0a0";
-});
-
-/* drop */
-dropBox.addEventListener("drop", function(e){
-  e.preventDefault();
-  dropBox.style.borderColor = "#a0a0a0";
-
-  const file = e.dataTransfer.files[0];
-  if(file && file.type.startsWith("image/")){
-    showPreview(file);
-  }
-});
-
-/* preview function */
-function showPreview(file){
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e){
-    previewImage.src = e.target.result;
-    previewImage.style.display = "block";
-  }
-  reader.readAsDataURL(file);
-}
-
-/* open editor page */
-document.querySelector(".open-editor-btn").addEventListener("click", function(){
-  if(previewImage.style.display === "none" || !previewImage.src){
-    alert("Please select an image first!");
-    return;
-  }
-  
-  try {
-      // Save image to local storage to use in editor.html
-      localStorage.setItem("uploadedImage", previewImage.src);
-      window.location.href = "editor.html";
-  } catch (e) {
-      // Handle storage quota errors (common with large 4K images)
-      alert("Image is too large for browser storage. Please try a smaller image.");
-      console.error("Storage failed:", e);
-  }
-});
-</script>
+<script src="scrip.js"></script>
 </body>
 </html>

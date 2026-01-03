@@ -4,6 +4,7 @@ from PIL import Image
 import io
 from rembg import remove
 import socket
+import os
 
 app = Flask(__name__)
 CORS(app)  # Allow browser to communicate with this server
@@ -44,6 +45,10 @@ def remove_background():
     
     return send_file(io.BytesIO(output_image), mimetype='image/png')
 
+@app.route('/', methods=['GET'])
+def home():
+    return "Backend is running successfully! Use /upscale or /remove-bg endpoints."
+
 if __name__ == '__main__':
     print("Starting Python Upscale Server on port 5000...")
     print("\033[1;36mRemove backgrounds & upscale images to 4K instantly.\033[0m")
@@ -60,4 +65,6 @@ if __name__ == '__main__':
         local_ip = "127.0.0.1"
     print(f"To access on mobile, use this URL: http://{local_ip}:5000")
 
-    app.run(host="0.0.0.0", port=5000)
+    # Use the PORT environment variable if available (for Cloud deployment), otherwise 5000
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
