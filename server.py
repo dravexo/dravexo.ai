@@ -1,10 +1,12 @@
 from flask import Flask, request, send_file, send_from_directory
+from flask_cors import CORS
 from rembg import remove
 from PIL import Image
 import io
 import os
 
 app = Flask(__name__, static_folder='.', static_url_path='')
+CORS(app)
 
 # 1. Serve Frontend (HTML/CSS/JS)
 @app.route('/')

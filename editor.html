@@ -275,7 +275,7 @@ body{
 
         // 3. Send to Python Server (using XMLHttpRequest for progress)
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', '/remove-bg', true);
+        xhr.open('POST', 'https://reilwey.app/remove-bg', true);
         xhr.responseType = 'blob';
 
         xhr.upload.onprogress = function(e) {
@@ -330,7 +330,11 @@ body{
 
     } catch (error) {
         console.error(error);
-        status.textContent = "🙏 Sorry for the inconvenience. Our service is currently available from 8:00 AM to 9:00 PM, and we’ll be launching a 24/7 server very soon.";
+        if (error.message === 'Network error' || error.name === 'TypeError') {
+             status.textContent = "⚠️ Connection Failed: Possible CORS error or Server is down. Check console.";
+        } else {
+             status.textContent = "🙏 Sorry for the inconvenience. Our service is currently available from 8:00 AM to 9:00 PM.";
+        }
         status.style.color = "#008B8B";
         this.disabled = false;
         spinner.style.display = "none";
@@ -388,7 +392,7 @@ body{
         formData.append('image', blob);
 
         // 3. Send to Python Server
-        const serverResponse = await fetch('/upscale', {
+        const serverResponse = await fetch('https://reilwey.app/upscale', {
             method: 'POST',
             body: formData
         });
