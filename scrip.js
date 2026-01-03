@@ -1,9 +1,15 @@
 /* ==========================================
    GLOBAL CONFIGURATION
    ========================================== */
-// IMPORTANT: Mobile par chalane ke liye yahan apna Render/Railway URL dalein.
-// Localhost (http://127.0.0.1:5000) mobile par kaam nahi karega.
-const BACKEND_URL = "https://dravexo-store.onrender.com"; 
+// AUTOMATIC CONFIGURATION:
+// Ye code check karega ki aap Local chala rahe hain ya Cloud par.
+ 
+const hostname = window.location.hostname;
+// Agar IP address (192.168...) ya localhost hai, to Local Server use karein
+if (hostname === "localhost" || hostname === "127.0.0.1" || hostname.startsWith("192.168.") || hostname.startsWith("10.") || window.location.protocol === 'file:') {
+    BACKEND_URL = `http://${hostname === '' ? 'localhost' : hostname}:5000`;
+    console.log("Running in Local Mode. Backend:", BACKEND_URL);
+}
 
 /* ==========================================
    DOM ELEMENTS & SETUP
@@ -95,7 +101,7 @@ async function processImage(endpoint) {
   formData.append('image', file);
 
   // UI Updates
-  statusText.innerText = "Processing... Please wait (Server might be waking up)";
+  statusText.innerText = "dravexo kaha raha hai thoda wait karo";
   statusText.style.color = "blue";
   resultImage.style.display = "none";
   

@@ -8,6 +8,11 @@
 <!-- Cropper.js -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<!-- Google AdSense Script -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8372917146289765"
+     crossorigin="anonymous"></script>
+<script async custom-element="amp-auto-ads"
+        src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js"></script>
 
 <style>
 *{
@@ -111,6 +116,9 @@ body{
 </style>
 </head>
 <body>
+<amp-auto-ads type="adsense"
+        data-ad-client="ca-pub-8372917146289765">
+</amp-auto-ads>
 <div class="app-handle">DRAVEXO</div>
 
 <div class="upload-wrapper">
@@ -125,7 +133,7 @@ body{
     <button id="saveCropBtn" class="action-btn" style="display:none;">✅ Save Crop</button>
     <button id="removeBgBtn" class="action-btn">✨ Remove Background</button>
     <button id="upscaleBtn" class="action-btn">⚡ 4K Upscale</button>
-    <button id="nextBtn" class="action-btn" style="display:none;">Next →</button>
+    <button id="nextBtn" class="action-btn" style="display:none;">⬇ Download Image</button>
     <button id="compareBtn" class="action-btn" style="display:none;">👁 Compare</button>
     <button onclick="window.location.href='index.html'" class="action-btn back-btn">← Back</button>
 
@@ -133,6 +141,17 @@ body{
       <label for="bgColorPicker">Add Background Color:</label>
       <input type="color" id="bgColorPicker" value="#ffffff" style="vertical-align: middle; height: 35px; width: 50px; border: 1px solid #ccc; padding: 2px;">
     </div>
+
+    <!-- Ad Container (Hidden initially, shows on Download) -->
+    <div id="adContainer" style="display:none; margin-top: 20px; min-height: 100px;">
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-format="fluid"
+             data-ad-layout-key="-ef+6k-30-ac+ty"
+             data-ad-client="ca-pub-8372917146289765"
+             data-ad-slot="4244224035"></ins>
+    </div>
+
     <p id="status" style="margin-top:15px; color:#666; font-weight:500;"></p>
   </div>
 </div>
@@ -167,6 +186,15 @@ body{
   const progressContainer = document.getElementById('progressContainer');
   const progressBar = document.getElementById('progressBar');
   
+  // ------------------------------------------------------
+  // AUTOMATIC BACKEND CONFIGURATION
+  // ------------------------------------------------------
+  const hostname = window.location.hostname;
+  if (hostname === "localhost" || hostname === "127.0.0.1" || hostname.startsWith("192.168.") || hostname.startsWith("10.") || window.location.protocol === 'file:') {
+      BACKEND_URL = `http://${hostname === '' ? 'localhost' : hostname}:5000`;
+      console.log("Running in Local Mode. Backend:", BACKEND_URL);
+  }
+
   // 1. Load Image from LocalStorage
   const savedImage = localStorage.getItem("uploadedImage");
   let originalImageSrc = savedImage; // Keep track of the opaque image (original or cropped)
@@ -256,7 +284,7 @@ body{
 
         // 3. Send to Python Server (using XMLHttpRequest for progress)
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', 'https://dravexo-store.onrender.com/remove-bg', true);
+        xhr.open('POST', `${BACKEND_URL}/remove-bg`, true);
         xhr.responseType = 'blob';
 
         xhr.upload.onprogress = function(e) {
@@ -369,7 +397,7 @@ body{
         formData.append('image', blob);
 
         // 3. Send to Python Server
-        const serverResponse = await fetch('https://dravexo-store.onrender.com/upscale', {
+        const serverResponse = await fetch(`${BACKEND_URL}/upscale`, {
             method: 'POST',
             body: formData
         });
@@ -398,17 +426,29 @@ body{
     }
   });
 
-  // 6. Next Button Logic (Go to Download Page)
+  // 6. Next Button Logic (Direct Download)
   nextBtn.addEventListener('click', function(){
-    uploadWrapper.style.display = 'none';
-    downloadPage.style.display = 'flex';
-    finalImage.src = img.src;
+    const link = document.createElement('a');
+    link.download = 'dravexo-ai-result.png'; // Yahan file ka naam badla hai
+    link.href = img.src;
+    link.click();
+
+    // Show Thank You message
+    status.textContent = "Thank You for using DRAVEXO.AI! 🎉";
+    status.style.color = "#20bf55";
+
+    // Show Ad when download starts
+    const adContainer = document.getElementById('adContainer');
+    if (adContainer.style.display === 'none') {
+        adContainer.style.display = 'block';
+        (window.adsbygoogle = window.adsbygoogle || []).push({});
+    }
   });
 
   // 7. Final Download Logic
   finalDownloadBtn.addEventListener('click', function(){
     const link = document.createElement('a');
-    link.download = 'dravexso-edited.png';
+    link.download = 'dravexo-ai-result.png';
     link.href = finalImage.src;
     link.click();
   });
