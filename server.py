@@ -3,7 +3,6 @@ from flask_cors import CORS
 from PIL import Image
 import io
 from rembg import remove
-import uvicorn
 import socket
 
 app = Flask(__name__)
@@ -51,8 +50,14 @@ if __name__ == '__main__':
     print("Sorry for the inconvenience. Our service is currently available from 8:00 AM to 9:00 PM, and we’ll be launching a 24/7 server very soon.")
 
     # Show the IP address for mobile access
-    hostname = socket.gethostname()
-    local_ip = socket.gethostbyname(hostname)
+    try:
+        # Connect to a public DNS server to get the correct local IP
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        local_ip = s.getsockname()[0]
+        s.close()
+    except Exception:
+        local_ip = "127.0.0.1"
     print(f"To access on mobile, use this URL: http://{local_ip}:5000")
 
-    uvicorn.run(app, host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5000)
