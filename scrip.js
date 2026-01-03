@@ -3,7 +3,7 @@
    ========================================== */
 // IMPORTANT: Mobile par chalane ke liye yahan apna Render/Railway URL dalein.
 // Localhost (http://127.0.0.1:5000) mobile par kaam nahi karega.
-const BACKEND_URL = "https://YOUR-APP-NAME.onrender.com"; 
+const BACKEND_URL = "https://dravexo-store.onrender.com"; 
 
 /* ==========================================
    DOM ELEMENTS & SETUP

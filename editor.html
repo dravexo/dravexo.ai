@@ -256,7 +256,7 @@ body{
 
         // 3. Send to Python Server (using XMLHttpRequest for progress)
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', 'http://127.0.0.1:5000/remove-bg', true);
+        xhr.open('POST', 'https://dravexo-store.onrender.com/remove-bg', true);
         xhr.responseType = 'blob';
 
         xhr.upload.onprogress = function(e) {
@@ -369,7 +369,7 @@ body{
         formData.append('image', blob);
 
         // 3. Send to Python Server
-        const serverResponse = await fetch('http://127.0.0.1:5000/upscale', {
+        const serverResponse = await fetch('https://dravexo-store.onrender.com/upscale', {
             method: 'POST',
             body: formData
         });
