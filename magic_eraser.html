@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simple Magic Eraser</title>
+    <meta name="google-adsense-account" content="ca-pub-8372917146289765">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8372917146289765"
+     crossorigin="anonymous"></script>
+    <script async custom-element="amp-auto-ads"
+        src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js"></script>
     <style>
         body {
             font-family: sans-serif;
@@ -31,6 +36,32 @@
             background-size: 20px 20px;
             background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
             cursor: crosshair;
+        }
+
+        /* Tool Controls */
+        .tool-panel {
+            background: white;
+            padding: 15px;
+            border-radius: 20px;
+            margin: 20px auto;
+            max-width: 600px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .tool-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            color: #333;
+            cursor: pointer;
+        }
+        input[type="range"] {
+            accent-color: #20bf55;
         }
 
         /* Colorful Buttons Style */
@@ -77,6 +108,16 @@
             pointer-events: none;
             z-index: 999;
         }
+        #brush-cursor {
+            position: fixed;
+            border: 2px solid #333;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            display: none;
+            z-index: 1001;
+        }
         @keyframes rippleAnim {
             0% { transform: scale(1); opacity: 1; }
             100% { transform: scale(30); opacity: 0; }
@@ -84,10 +125,26 @@
     </style>
 </head>
 <body>
+    <amp-auto-ads type="adsense"
+        data-ad-client="ca-pub-8372917146289765">
+    </amp-auto-ads>
 
     <h1>DRAVEXO</h1>
     
     <div id="processing-overlay">✨ Magic Removing...</div>
+    <div id="brush-cursor"></div>
+
+    <div class="tool-panel">
+        <label class="tool-option">
+            <input type="radio" name="tool" value="magic" onchange="setTool('magic')"> 🪄 Magic Wand
+        </label>
+        <label class="tool-option">
+            <input type="radio" name="tool" value="manual" checked onchange="setTool('manual')"> 🧹 Manual Eraser
+        </label>
+        <div id="brushControls" style="display:block; border-left: 2px solid #eee; padding-left: 20px;">
+            <label>Brush Size: <input type="range" id="brushSize" min="5" max="100" value="30"></label>
+        </div>
+    </div>
 
     <div class="controls">
         <button onclick="downloadImage()">⬇ Download PNG</button>
@@ -99,8 +156,10 @@
 
     <script>
         const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         const historyStack = [];
+        let currentTool = 'manual';
+        let isDrawing = false;
 
         // Load from LocalStorage if available
         const savedImage = localStorage.getItem("uploadedImage");
@@ -120,6 +179,22 @@
             img.src = src;
         }
 
+        function setTool(tool) {
+            currentTool = tool;
+            document.getElementById('brushControls').style.display = tool === 'manual' ? 'block' : 'none';
+            if (tool === 'manual') {
+                canvas.style.cursor = 'none';
+            } else {
+                canvas.style.cursor = 'crosshair';
+                document.getElementById('brush-cursor').style.display = 'none';
+            }
+        }
+
+        function saveState() {
+            historyStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+            if (historyStack.length > 10) historyStack.shift(); // Limit history
+        }
+
         function undo() {
             if (historyStack.length > 0) {
                 const previousState = historyStack.pop();
@@ -128,12 +203,12 @@
         }
 
         // 2. Magic Eraser Logic (Click to Remove Color)
-        canvas.addEventListener('click', (e) => {
+        function handleEraser(clientX, clientY) {
             // 1. Visual Feedback (Ripple Animation)
             const ripple = document.createElement('div');
             ripple.classList.add('ripple');
-            ripple.style.left = e.pageX + 'px';
-            ripple.style.top = e.pageY + 'px';
+            ripple.style.left = (clientX + window.scrollX) + 'px';
+            ripple.style.top = (clientY + window.scrollY) + 'px';
             document.body.appendChild(ripple);
             setTimeout(() => ripple.remove(), 600);
 
@@ -144,14 +219,14 @@
             // 3. Process with slight delay to allow UI update
             setTimeout(() => {
                 // Save state before modification
-                historyStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+                saveState();
 
                 const rect = canvas.getBoundingClientRect();
                 const scaleX = canvas.width / rect.width;
                 const scaleY = canvas.height / rect.height;
                 
-                const x = Math.floor((e.clientX - rect.left) * scaleX);
-                const y = Math.floor((e.clientY - rect.top) * scaleY);
+                const x = Math.floor((clientX - rect.left) * scaleX);
+                const y = Math.floor((clientY - rect.top) * scaleY);
 
                 // Get the color user clicked on
                 const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -172,7 +247,83 @@
                 // Hide Overlay
                 overlay.style.display = 'none';
             }, 50);
+        }
+
+        // Manual Eraser Logic
+        function startDrawing(e) {
+            if (currentTool === 'manual') {
+                isDrawing = true;
+                saveState();
+                draw(e);
+            } else {
+                handleEraser(e.clientX, e.clientY);
+            }
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+            ctx.beginPath(); // Reset path
+        }
+
+        function draw(e) {
+            if (!isDrawing || currentTool !== 'manual') return;
+
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+            const size = document.getElementById('brushSize').value;
+
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.lineWidth = size;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+
+            ctx.globalCompositeOperation = 'source-over';
+        }
+
+        // Event Listeners
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', (e) => {
+            if (currentTool === 'manual') {
+                const cursor = document.getElementById('brush-cursor');
+                const size = document.getElementById('brushSize').value;
+                cursor.style.width = size + 'px';
+                cursor.style.height = size + 'px';
+                cursor.style.left = e.clientX + 'px';
+                cursor.style.top = e.clientY + 'px';
+                cursor.style.display = 'block';
+            }
+            draw(e);
         });
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', () => {
+            document.getElementById('brush-cursor').style.display = 'none';
+            stopDrawing();
+        });
+
+        // Touch Support
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent("mousedown", { clientX: touch.clientX, clientY: touch.clientY });
+            canvas.dispatchEvent(mouseEvent);
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent("mousemove", { clientX: touch.clientX, clientY: touch.clientY });
+            canvas.dispatchEvent(mouseEvent);
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', stopDrawing);
 
         function downloadImage() {
             const link = document.createElement('a');
@@ -180,6 +331,9 @@
             link.href = canvas.toDataURL();
             link.click();
         }
+
+        // Initialize tool state
+        setTool(currentTool);
     </script>
 </body>
 </html>

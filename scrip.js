@@ -80,51 +80,5 @@ if (openEditorBtn) {
 }
 
 // 2. AI Processing Logic (Upscale / Remove BG)
-async function processImage(endpoint) {
-  const file = fileInput.files[0];
-  if (!file) {
-    alert("Please select an image first!");
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append('image', file);
-
-  // UI Updates
-  statusText.innerText = "dravexo kaha raha hai thoda wait karo";
-  statusText.style.color = "blue";
-  resultImage.style.display = "none";
-  
-  try {
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      body: formData
-    });
-
-    if (!response.ok) {
-        throw new Error(`Server Error: ${response.statusText}`);
-    }
-
-    const blob = await response.blob();
-    const imageUrl = URL.createObjectURL(blob);
-    
-    // Show Result
-    resultImage.src = imageUrl;
-    resultImage.style.display = "block";
-    statusText.innerText = "Success! Image processed.";
-    statusText.style.color = "green";
-    
-  } catch (error) {
-    console.error(error);
-    statusText.innerText = "Error: Could not connect to server.";
-    statusText.style.color = "red";
-    alert("Server connection failed.");
-  }
-}
-
-// Connect Buttons
-const upscaleBtn = document.getElementById("upscaleBtn");
-if(upscaleBtn) upscaleBtn.addEventListener("click", () => processImage('/upscale'));
-
-const removeBgBtn = document.getElementById("removeBgBtn");
-if(removeBgBtn) removeBgBtn.addEventListener("click", () => processImage('/remove-bg'));
+// NOTE: This file contained server-side logic which does not work on GitHub Pages.
+// All logic has been moved to editor.html (Client-Side).

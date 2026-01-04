@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Photo Editor</title>
+<meta name="google-adsense-account" content="ca-pub-8372917146289765">
 <!-- Cropper.js -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
@@ -130,7 +131,7 @@ body{
     <button id="cropBtn" class="action-btn">✂ Crop Image</button>
     <button id="saveCropBtn" class="action-btn" style="display:none;">✅ Save Crop</button>
     <button id="upscaleBtn" class="action-btn">⚡ 4K Upscale</button>
-    <button onclick="window.location.href='magic_eraser.html'" class="action-btn" style="background: #ff9800;">🪄 Magic Eraser</button>
+    <button id="removeBgBtn" class="action-btn" style="background: #e73c7e;">🌫 Remove BG</button>
     <button id="nextBtn" class="action-btn" style="display:none;">⬇ Download Image</button>
     <button id="compareBtn" class="action-btn" style="display:none;">👁 Compare</button>
     <button onclick="window.location.href='index.html'" class="action-btn back-btn">← Back</button>
@@ -165,13 +166,38 @@ body{
   </div>
 </div>
 
-<script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDjHxGYXjctXyPcFpGTkuP8slmWpcgcup0",
+    authDomain: "dravexo-6399c.firebaseapp.com",
+    databaseURL: "https://dravexo-6399c-default-rtdb.firebaseio.com",
+    projectId: "dravexo-6399c",
+    storageBucket: "dravexo-6399c.firebasestorage.app",
+    messagingSenderId: "393527172250",
+    appId: "1:393527172250:web:40864f1d3a509f27ead323"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      console.log("User is active in Editor:", user.displayName);
+    }
+  });
+</script>
+
+<script type="module">
   const img = document.getElementById('editorImage');
   const status = document.getElementById('status');
   const nextBtn = document.getElementById('nextBtn');
   const cropBtn = document.getElementById('cropBtn');
   const saveCropBtn = document.getElementById('saveCropBtn');
   const upscaleBtn = document.getElementById('upscaleBtn');
+  const removeBgBtn = document.getElementById('removeBgBtn');
   const compareBtn = document.getElementById('compareBtn');
   const spinner = document.getElementById('loadingSpinner');
   const bgColorControls = document.getElementById('bgColorControls');
@@ -244,6 +270,27 @@ body{
     upscaleBtn.style.display = 'inline-block';
   });
 
+  // Remove Background Logic
+  removeBgBtn.addEventListener('click', function() {
+      try {
+          // If image is a blob URL (from AI), convert to DataURL
+          if (img.src.startsWith('blob:')) {
+              const canvas = document.createElement('canvas');
+              canvas.width = img.naturalWidth;
+              canvas.height = img.naturalHeight;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0);
+              localStorage.setItem('uploadedImage', canvas.toDataURL());
+          } else {
+              localStorage.setItem('uploadedImage', img.src);
+          }
+          window.location.href = 'magic_eraser.html';
+      } catch(e) {
+          alert("Image is too large to transfer. Please download and re-upload.");
+          window.location.href = 'magic_eraser.html';
+      }
+  });
+
   // 4. Apply Background Color Logic (triggers on color change)
   bgColorPicker.addEventListener('input', function() {
     const imageWithoutBg = currentNoBgImage;
@@ -285,7 +332,7 @@ body{
         // Client-side 4K Upscale (Canvas Resize)
         const resultBlob = await new Promise((resolve, reject) => {
             const tempImg = new Image();
-            tempImg.crossOrigin = "Anonymous";
+            // tempImg.crossOrigin = "Anonymous"; // Not needed for Data URLs
             tempImg.src = img.src;
             tempImg.onload = () => {
                 const canvas = document.createElement('canvas');
